@@ -1,0 +1,9 @@
+# Default initial positions for fanuc_m20ia's ros2_control fake system
+
+initial_positions:
+  joint_1: 0
+  joint_2: -0.4
+  joint_3: -1.4
+  joint_4: 0
+  joint_5: 0
+  joint_6: 0

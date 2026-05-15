@@ -1,0 +1,12 @@
+build/
+install/
+log/
+.agents/
+.vscode/
+.idea/
+
+**/__pycache__/
+**/*.pyc
+
+##src/fanuc_driver/fanuc_libs/dependencies/reflect-cpp/vcpkg/
+##src/fanuc_driver/fanuc_libs/dependencies/yaml-cpp/test/

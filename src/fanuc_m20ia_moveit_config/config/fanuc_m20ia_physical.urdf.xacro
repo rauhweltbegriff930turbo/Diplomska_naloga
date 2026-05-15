@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="fanuc_m20ia">
+  <xacro:arg name="robot_ip" default="192.168.1.100"/>
+  <xacro:arg name="rmi_port" default="16001"/>
+  <xacro:arg name="stream_motion_port" default="60015"/>
+  <xacro:arg name="gpio_configuration" default=""/>
+  <xacro:arg name="payload_schedule" default="1"/>
+  <xacro:arg name="out_cmd_interp_buff_target" default="8"/>
+  <xacro:arg name="force_sensor_type" default="0"/>
+
+  <xacro:include filename="$(find fanuc_m20ia_description)/urdf/m20ia.urdf" />
+  <xacro:include filename="fanuc_m20ia_physical_ros2_control.xacro" />
+
+  <xacro:fanuc_m20ia_physical_ros2_control name="fanuc_m20ia"/>
+</robot>

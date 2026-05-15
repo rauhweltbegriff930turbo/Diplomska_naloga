@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="fanuc_m20ia">
+  <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+
+  <xacro:include filename="$(find fanuc_m20ia_description)/urdf/m20ia.urdf" />
+  <xacro:include filename="fanuc_m20ia_gazebo_ros2_control.xacro" />
+
+  <link name="world"/>
+
+  <joint name="world_to_base_link" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:fanuc_m20ia_gazebo_ros2_control name="GazeboSimSystem" initial_positions_file="$(arg initial_positions_file)"/>
+
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find fanuc_m20ia_moveit_config)/config/ros2_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+</robot>

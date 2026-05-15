@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: fanuc_m20ia_description
+    relative_path: urdf/m20ia.urdf
+  srdf:
+    relative_path: config/fanuc_m20ia.srdf
+  package_settings:
+    author_name: Jakob
+    author_email: jz96234@student.uni-lj.si
+    generated_timestamp: 1776878622
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
