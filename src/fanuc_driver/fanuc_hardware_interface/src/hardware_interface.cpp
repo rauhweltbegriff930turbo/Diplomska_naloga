@@ -292,6 +292,7 @@ FanucHardwareInterface::FanucHardwareInterface()
   , joint_targets_degrees_{ Eigen::VectorXd::Zero(9) }
   , stream_motion_port_(60015)
   , rmi_port_(1600)
+  , group_mask_(std::nullopt)
 {
 }
 
@@ -341,6 +342,12 @@ FanucHardwareInterface::on_configure(const rclcpp_lifecycle::State& /*previous_s
     rmi_port_ = StringToInt("rmi_port", info_.hardware_parameters["rmi_port"]);
     stream_motion_port_ = StringToInt("stream_motion_port", info_.hardware_parameters["stream_motion_port"]);
     payload_schedule_ = StringToInt("payload_schedule", info_.hardware_parameters["payload_schedule"]);
+    const int group_mask = StringToInt("group_mask", info_.hardware_parameters["group_mask"]);
+    if (group_mask < 0 || group_mask > 255)
+    {
+      throw std::out_of_range("group_mask must fit in uint8_t");
+    }
+    group_mask_ = static_cast<uint8_t>(group_mask);
     out_cmd_interp_buff_target_ =
         StringToInt("out_cmd_interp_buff_target", info_.hardware_parameters["out_cmd_interp_buff_target"]);
     force_sensor_type_ = StringToInt("force_sensor_type", info_.hardware_parameters["force_sensor_type"]);
@@ -351,6 +358,7 @@ FanucHardwareInterface::on_configure(const rclcpp_lifecycle::State& /*previous_s
   }
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger(kFRHWInterface), "payload_schedule: " << payload_schedule_);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger(kFRHWInterface), "group_mask: " << static_cast<int>(*group_mask_));
   RCLCPP_INFO_STREAM(rclcpp::get_logger(kFRHWInterface), "Starting RMI with: " << ip_address_);
 
   // Initialize the driver client
@@ -360,7 +368,9 @@ FanucHardwareInterface::on_configure(const rclcpp_lifecycle::State& /*previous_s
     try
     {
       fanuc_client_.reset();
-      fanuc_client_ = std::make_unique<fanuc_client::FanucClient>(ip_address_, stream_motion_port_, rmi_port_);
+      fanuc_client_ =
+          std::make_unique<fanuc_client::FanucClient>(ip_address_, stream_motion_port_, rmi_port_, nullptr, nullptr,
+                                                      group_mask_);
       fanuc_client_->setOutCmdInterpBuffTarget(out_cmd_interp_buff_target_);
       fanuc_client_->setForceSensorType(force_sensor_type_);
       fanuc_client_->startRMI();

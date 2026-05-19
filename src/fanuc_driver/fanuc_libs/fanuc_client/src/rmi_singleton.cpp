@@ -30,10 +30,12 @@ std::shared_ptr<rmi::RMIConnectionInterface> RMISingleton::getRMIInstance()
 }
 
 std::shared_ptr<rmi::RMIConnectionInterface> RMISingleton::creatNewRMIInstance(const std::string& robot_ip_address,
-                                                                               const uint16_t rmi_port)
+                                                                               const uint16_t rmi_port,
+                                                                               const std::optional<uint8_t> group_mask)
 {
   std::scoped_lock lock(getInstance().mtx_);
-  getInstance().rmi_connection_interface_ = std::make_unique<rmi::RMIConnection>(robot_ip_address, rmi_port);
+  getInstance().rmi_connection_interface_ =
+      std::make_unique<rmi::RMIConnection>(robot_ip_address, rmi_port, group_mask);
   return getInstance().rmi_connection_interface_;
 }
 

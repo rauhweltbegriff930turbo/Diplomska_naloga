@@ -56,7 +56,8 @@ public:
   FanucClient() = delete;
   explicit FanucClient(std::string robot_ip, uint16_t stream_motion_port = 60015, uint16_t rmi_port = 16001,
                        std::unique_ptr<stream_motion::StreamMotionInterface> stream_motion_interface = nullptr,
-                       std::unique_ptr<rmi::RMIConnectionInterface> rmi_connection_interface = nullptr);
+                       std::unique_ptr<rmi::RMIConnectionInterface> rmi_connection_interface = nullptr,
+                       std::optional<uint8_t> group_mask = std::nullopt);
 
   FanucClient(const FanucClient&) = delete;
   FanucClient& operator=(const FanucClient&) = delete;
@@ -168,6 +169,7 @@ private:
   const std::string robot_ip_;
   const uint16_t stream_motion_port_;
   const uint16_t rmi_port_;
+  const std::optional<uint8_t> group_mask_;
 
   // Limits
   Eigen::MatrixXd vel_limits_no_load_ = Eigen::MatrixXd::Zero(9, 20);
@@ -214,7 +216,8 @@ class RMISingleton
 {
 public:
   static std::shared_ptr<rmi::RMIConnectionInterface> creatNewRMIInstance(const std::string& robot_ip_address,
-                                                                          uint16_t rmi_port = 16001);
+                                                                          uint16_t rmi_port = 16001,
+                                                                          std::optional<uint8_t> group_mask = std::nullopt);
 
   static std::shared_ptr<rmi::RMIConnectionInterface> getRMIInstance();
 

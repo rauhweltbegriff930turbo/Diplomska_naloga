@@ -81,16 +81,18 @@ struct FanucClient::PQueueImpl
 
 FanucClient::FanucClient(std::string robot_ip, const uint16_t stream_motion_port, const uint16_t rmi_port,
                          std::unique_ptr<stream_motion::StreamMotionInterface> stream_motion_interface,
-                         std::unique_ptr<rmi::RMIConnectionInterface> rmi_connection_interface)
+                         std::unique_ptr<rmi::RMIConnectionInterface> rmi_connection_interface,
+                         const std::optional<uint8_t> group_mask)
   : robot_ip_{ std::move(robot_ip) }
   , stream_motion_port_{ stream_motion_port }
   , rmi_port_{ rmi_port }
+  , group_mask_{ group_mask }
   , stream_motion_{ stream_motion_interface == nullptr ?
                         std::make_unique<stream_motion::StreamMotionConnection>(robot_ip_, 1.0, stream_motion_port_) :
                         std::move(stream_motion_interface) }
   , command_pos{}
   , rmi_connection_{ rmi_connection_interface == nullptr ?
-                         RMISingleton::creatNewRMIInstance(robot_ip_, rmi_port_) :
+                         RMISingleton::creatNewRMIInstance(robot_ip_, rmi_port_, group_mask_) :
                          RMISingleton::setRMIInstance(std::move(rmi_connection_interface)) }
   , out_cmd_interp_buff_target_{ 8 }
   , force_sensor_type_{ 0 }

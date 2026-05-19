@@ -13,6 +13,7 @@
 #include "hardware_interface/system_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "rclcpp_lifecycle/state.hpp"
+#include <optional>
 
 namespace fanuc_robot_driver
 {
@@ -97,6 +98,7 @@ private:
   int32_t payload_schedule_;
   uint16_t stream_motion_port_;
   uint16_t rmi_port_;
+  std::optional<uint8_t> group_mask_;
   uint32_t out_cmd_interp_buff_target_;
   uint32_t force_sensor_type_;
 

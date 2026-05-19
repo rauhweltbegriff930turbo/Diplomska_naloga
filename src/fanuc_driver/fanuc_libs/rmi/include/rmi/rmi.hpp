@@ -107,7 +107,8 @@ public:
 class RMIConnection final : public RMIConnectionInterface
 {
 public:
-  explicit RMIConnection(const std::string& robot_ip_address, uint16_t rmi_port = 16001);
+  explicit RMIConnection(const std::string& robot_ip_address, uint16_t rmi_port = 16001,
+                         std::optional<uint8_t> group_mask = std::nullopt);
 
   ~RMIConnection() override;
 
@@ -215,6 +216,7 @@ private:
 
   const std::string robot_ip_address_;
   const uint16_t rmi_port_;
+  const std::optional<uint8_t> group_mask_;
 
   int32_t sequence_number_;
   std::list<std::string> json_responses_;

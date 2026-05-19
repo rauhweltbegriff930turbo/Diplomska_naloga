@@ -10,6 +10,7 @@ from moveit_configs_utils import MoveItConfigsBuilder
 
 def launch_setup(context, *args, **kwargs):
     robot_ip = LaunchConfiguration("robot_ip")
+    group_mask = LaunchConfiguration("group_mask")
     gpio_configuration = LaunchConfiguration("gpio_configuration")
     launch_rviz = LaunchConfiguration("launch_rviz")
 
@@ -28,6 +29,9 @@ def launch_setup(context, *args, **kwargs):
             "robot_ip:=",
             robot_ip,
             " ",
+            "group_mask:=",
+            group_mask,
+            " ",
             "gpio_configuration:=",
             gpio_configuration,
         ]
@@ -43,6 +47,7 @@ def launch_setup(context, *args, **kwargs):
             file_path="config/fanuc_m20ia_physical.urdf.xacro",
             mappings={
                 "robot_ip": robot_ip.perform(context),
+                "group_mask": group_mask.perform(context),
                 "gpio_configuration": gpio_configuration.perform(context),
             },
         )
@@ -149,6 +154,11 @@ def generate_launch_description():
                     ]
                 ),
                 description="GPIO configuration file used by the FANUC hardware interface.",
+            ),
+            DeclareLaunchArgument(
+                "group_mask",
+                default_value="1",
+                description="RMI group mask to use when initializing remote motion.",
             ),
             DeclareLaunchArgument(
                 "launch_rviz",

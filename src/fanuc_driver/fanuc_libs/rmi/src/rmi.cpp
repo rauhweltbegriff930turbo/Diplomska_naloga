@@ -178,10 +178,12 @@ private:
   mutable std::mutex mutex_;
 };
 
-RMIConnection::RMIConnection(const std::string& robot_ip_address, const uint16_t rmi_port)
+RMIConnection::RMIConnection(const std::string& robot_ip_address, const uint16_t rmi_port,
+                             const std::optional<uint8_t> group_mask)
   : RMIConnectionInterface()
   , robot_ip_address_{ robot_ip_address }
   , rmi_port_{ rmi_port }
+  , group_mask_{ group_mask }
   , sequence_number_{ 1 }
   , connection_impl_{ std::make_unique<PConnectionImpl>(robot_ip_address, rmi_port) }
 {
@@ -320,7 +322,9 @@ InitializePacket::Response RMIConnection::initializeRemoteMotion(const std::opti
     std::scoped_lock lock(mutex_);
     sequence_number_ = 1;  // Reset sequence number for a new session
   }
-  connection_impl_->write(InitializePacket::Request());
+  InitializePacket::Request request;
+  request.GroupMask = group_mask_;
+  connection_impl_->write(request);
   return getResponsePacket<InitializePacket::Response>(timeout, "Failed to initialize RMI. ", std::nullopt);
 }
 

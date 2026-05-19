@@ -13,6 +13,7 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     robot_ip = LaunchConfiguration("robot_ip")
+    group_mask = LaunchConfiguration("group_mask")
     gpio_configuration = LaunchConfiguration("gpio_configuration")
     launch_rviz = LaunchConfiguration("launch_rviz")
     use_mock = LaunchConfiguration("use_mock")
@@ -29,6 +30,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             "robot_ip": robot_ip,
+            "group_mask": group_mask,
             "gpio_configuration": gpio_configuration,
             "launch_rviz": launch_rviz,
         }.items(),
@@ -70,6 +72,11 @@ def generate_launch_description():
                     ]
                 ),
                 description="GPIO configuration file used by the FANUC hardware interface.",
+            ),
+            DeclareLaunchArgument(
+                "group_mask",
+                default_value="1",
+                description="RMI group mask used for remote motion initialization.",
             ),
             DeclareLaunchArgument(
                 "launch_rviz",
