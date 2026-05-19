@@ -4,178 +4,84 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from launch import LaunchDescription
-from launch.actions import OpaqueFunction
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import (
-    LaunchConfiguration,
-    PathJoinSubstitution,
-)
-from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition, UnlessCondition
-
-from moveit_configs_utils import MoveItConfigsBuilder
-from ament_index_python.packages import get_package_share_directory
-import os
-
-
-def launch_setup(context, *args, **kwargs):
-    robot_model = LaunchConfiguration("robot_model")
-    robot_ip = LaunchConfiguration("robot_ip")
-    ros2_control_config = LaunchConfiguration("ros2_control_config")
-    gpio_configuration = LaunchConfiguration("gpio_configuration")
-    use_mock = LaunchConfiguration("use_mock")
-
-    nodes_to_launch = []
-
-    # Conditionally include the appropriate control launch file
-    include_fanuc_control = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("fanuc_hardware_interface"),
-                    "launch",
-                    "fanuc_physical_control.launch.py",
-                ]
-            ),
-        ),
-        launch_arguments={
-            "robot_model": robot_model,
-            "robot_series": "m20ia",
-            "robot_ip": robot_ip,
-            "gpio_configuration": gpio_configuration,
-            "ros2_control_config": ros2_control_config,
-            "launch_rviz": "false",
-            "use_mock": use_mock,
-        }.items(),
-        condition=UnlessCondition(use_mock),
-    )
-    nodes_to_launch.append(include_fanuc_control)
-
-    include_fanuc_mock_control = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            PathJoinSubstitution(
-                [
-                    FindPackageShare("fanuc_hardware_interface"),
-                    "launch",
-                    "fanuc_mock_control.launch.py",
-                ]
-            ),
-        ),
-        launch_arguments={
-            "robot_model": robot_model,
-            "robot_series": "m20ia",
-            "gpio_configuration": gpio_configuration,
-            "ros2_control_config": ros2_control_config,
-            "launch_rviz": "false",
-        }.items(),
-        condition=IfCondition(use_mock),
-    )
-    nodes_to_launch.append(include_fanuc_mock_control)
-
-    description_arguments = {
-        "robot_ip": robot_ip.perform(context),
-        "use_mock": use_mock.perform(context),
-        "gpio_configuration": gpio_configuration.perform(context),
-    }
-
-    urdf_full_path = os.path.join(
-        get_package_share_directory("fanuc_hardware_interface"),
-        "robot",
-        f"{robot_model.perform(context)}.urdf.xacro",
-    )
-
-    moveit_config = (
-        MoveItConfigsBuilder(
-            robot_model.perform(context), package_name="fanuc_moveit_config"
-        )
-        .robot_description(file_path=urdf_full_path, mappings=description_arguments)
-        .robot_description_semantic(
-            file_path=f"srdf/{robot_model.perform(context)}.srdf"
-        )
-        .trajectory_execution(file_path="config/moveit_controllers.yaml")
-        .planning_scene_monitor(
-            publish_robot_description=True, publish_robot_description_semantic=True
-        )
-        .planning_pipelines(pipelines=["ompl"])
-        .to_moveit_configs()
-    )
-
-    # Start the actual move_group node/action server
-    move_group_node = Node(
-        package="moveit_ros_move_group",
-        executable="move_group",
-        output="log",
-        parameters=[moveit_config.to_dict()],
-    )
-    nodes_to_launch.append(move_group_node)
-
-    rviz_file = PathJoinSubstitution(
-        [FindPackageShare("fanuc_moveit_config"), "rviz", "view_robot.rviz"]
-    )
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        output="both",
-        parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.planning_pipelines,
-            moveit_config.robot_description_kinematics,
-            moveit_config.joint_limits,
-        ],
-        arguments=["--display-config", rviz_file],
-    )
-    nodes_to_launch.append(rviz_node)
-
-    return nodes_to_launch
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    declared_arguments = [
-        DeclareLaunchArgument(
-            "robot_model",
-            description="The robot model (required).",
-            choices=[
-                "m20ia"
-            ],
-        ),
-        DeclareLaunchArgument(
-            "robot_ip",
-            default_value="192.168.1.100",
-            description="The robot's IP address.",
-        ),
-        DeclareLaunchArgument(
-            "ros2_control_config",
-            default_value=PathJoinSubstitution(
+    robot_ip = LaunchConfiguration("robot_ip")
+    gpio_configuration = LaunchConfiguration("gpio_configuration")
+    launch_rviz = LaunchConfiguration("launch_rviz")
+    use_mock = LaunchConfiguration("use_mock")
+
+    real_robot_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
                 [
-                    FindPackageShare("fanuc_hardware_interface"),
-                    "config",
-                    "ros2_controllers.yaml",
+                    FindPackageShare("fanuc_m20ia_moveit_config"),
+                    "launch",
+                    "real_robot.launch.py",
                 ]
-            ),
-            description="ROS 2 control configuration file the controllers.",
+            )
         ),
-        DeclareLaunchArgument(
-            "gpio_configuration",
-            default_value=PathJoinSubstitution(
+        launch_arguments={
+            "robot_ip": robot_ip,
+            "gpio_configuration": gpio_configuration,
+            "launch_rviz": launch_rviz,
+        }.items(),
+        condition=UnlessCondition(use_mock),
+    )
+
+    mock_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            PathJoinSubstitution(
                 [
-                    FindPackageShare("fanuc_hardware_interface"),
-                    "config",
-                    "example_gpio_config.yaml",
+                    FindPackageShare("fanuc_m20ia_moveit_config"),
+                    "launch",
+                    "demo.launch.py",
                 ]
-            ),
-            description="YAML file configuration to specify the GPIO configuration..",
+            )
         ),
-        DeclareLaunchArgument(
-            "use_mock",
-            default_value="false",
-            description="Whether to use a mock hardware interface.",
-        ),
-    ]
+        condition=IfCondition(use_mock),
+    )
 
     return LaunchDescription(
-        declared_arguments + [OpaqueFunction(function=launch_setup)]
+        [
+            DeclareLaunchArgument(
+                "robot_model",
+                default_value="m20ia",
+                description="Kept for CLI compatibility. Only m20ia is supported by this wrapper.",
+            ),
+            DeclareLaunchArgument(
+                "robot_ip",
+                default_value="192.168.2.10",
+                description="IP address of the FANUC controller.",
+            ),
+            DeclareLaunchArgument(
+                "gpio_configuration",
+                default_value=PathJoinSubstitution(
+                    [
+                        FindPackageShare("fanuc_hardware_interface"),
+                        "config",
+                        "example_gpio_config_small.yaml",
+                    ]
+                ),
+                description="GPIO configuration file used by the FANUC hardware interface.",
+            ),
+            DeclareLaunchArgument(
+                "launch_rviz",
+                default_value="true",
+                description="Whether to start RViz.",
+            ),
+            DeclareLaunchArgument(
+                "use_mock",
+                default_value="false",
+                description="Use the M-20iA MoveIt demo launch instead of the real robot launch.",
+            ),
+            real_robot_launch,
+            mock_launch,
+        ]
     )
