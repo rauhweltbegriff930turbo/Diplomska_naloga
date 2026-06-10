@@ -17,6 +17,7 @@ def generate_launch_description():
     gpio_configuration = LaunchConfiguration("gpio_configuration")
     launch_rviz = LaunchConfiguration("launch_rviz")
     use_mock = LaunchConfiguration("use_mock")
+    use_sim_time = LaunchConfiguration("use_sim_time")
 
     real_robot_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -33,6 +34,7 @@ def generate_launch_description():
             "group_mask": group_mask,
             "gpio_configuration": gpio_configuration,
             "launch_rviz": launch_rviz,
+            "use_sim_time": use_sim_time,
         }.items(),
         condition=UnlessCondition(use_mock),
     )
@@ -47,6 +49,9 @@ def generate_launch_description():
                 ]
             )
         ),
+        launch_arguments={
+            "use_sim_time": use_sim_time,
+        }.items(),
         condition=IfCondition(use_mock),
     )
 
@@ -82,6 +87,11 @@ def generate_launch_description():
                 "launch_rviz",
                 default_value="true",
                 description="Whether to start RViz.",
+            ),
+            DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Whether nodes should use simulation time.",
             ),
             DeclareLaunchArgument(
                 "use_mock",
