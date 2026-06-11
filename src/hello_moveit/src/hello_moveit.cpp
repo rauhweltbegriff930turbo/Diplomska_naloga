@@ -6,6 +6,9 @@
 //#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <thread>  // <---- add this to the set of includes at the top
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
 
 int main(int argc, char ** argv)
 {
@@ -59,24 +62,30 @@ auto const draw_trajectory_tool_path =
   std::vector<geometry_msgs::msg::Pose> targets;
 
   geometry_msgs::msg::Pose pose1;
-  pose1.orientation.w = 1.0;
-  pose1.position.x = 0.6;
-  pose1.position.y = -0.20;
+  pose1.position.x = 0.70;
+  pose1.position.y = -0.40;
   pose1.position.z = 0.45;
+  tf2::Quaternion q1;
+  q1.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
+  pose1.orientation = tf2::toMsg(q1);
   targets.push_back(pose1);
 
   geometry_msgs::msg::Pose pose2;
-  pose2.orientation.w = 1.0;
   pose2.position.x = 0.60;
-  pose2.position.y = 0.20;
+  pose2.position.y = 0.40;  
   pose2.position.z = 0.45;
+  tf2::Quaternion q2;
+  q2.setRPY(0.0, 0.4, 0.6);  // roll, pitch, yaw
+  pose2.orientation = tf2::toMsg(q2);
   targets.push_back(pose2);
 
   geometry_msgs::msg::Pose pose3;
-  pose3.orientation.w = 1.0;
   pose3.position.x = 1.30;
   pose3.position.y = 0.20;
   pose3.position.z = 0.70;
+  tf2::Quaternion q3;
+  q3.setRPY(0.0, 1.2, 0.0);  // roll, pitch, yaw
+  pose3.orientation = tf2::toMsg(q3);
   targets.push_back(pose3);
 
 
