@@ -11,4 +11,83 @@
 
     <xacro:fanuc_m20ia_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
 
+    <link name="tool_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 1.570796 0" />
+        <geometry>
+          <cylinder radius="0.04" length="0.30"/>
+        </geometry>
+        <material name="white">
+            <color rgba="1.0 1.0 1.0 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 1.570796 0" />
+        <geometry>
+          <cylinder radius="0.04" length="0.3"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value=" .558" />
+        <origin xyz="0 0 0" />
+        <inertia
+          ixx=" .0000585"
+          ixy="-.000000000703"
+          ixz=" .00000000019"
+          iyy=" .0000433"
+          iyz=" .00000000227"
+          izz=" .0000433"
+        />                 <!-- Dodou sm eno nulo pousod -->
+      </inertial>
+    </link>
+    
+    <joint name="flange-tool_link" type="fixed">
+        <origin xyz="0.15 0 0" rpy="0 0 0"/>
+        <parent link="flange"/>
+        <child link="tool_link"/>
+    </joint>
+
+    <link name="tool_link2">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 1.570796 0" />
+        <geometry>
+          <cylinder radius="0.01" length="0.025"/>
+        </geometry>
+        <material name="white">
+            <color rgba="1.0 1.0 1.0 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 1.570796 0" />
+        <geometry>
+          <cylinder radius="0.01" length="0.025"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value=" .558" />
+        <origin xyz="0 0 0" />
+        <inertia
+          ixx=" .00000585"
+          ixy="-.0000000000703"
+          ixz=" .000000000019"
+          iyy=" .00000433"
+          iyz=" .000000000227"
+          izz=" .00000433"
+        />
+      </inertial>                 <!-- Dodou sm dve nuli pousod -->
+    </link>
+    
+    <joint name="tool_link-tool_link2" type="fixed">
+        <origin xyz="0.1625 0 0" rpy="0 0 0"/>
+        <parent link="tool_link"/>
+        <child link="tool_link2"/>
+    </joint>
+
+    <link name="tool_tip"/>
+    <joint name="tool_link2-tool_tip" type="fixed">
+        <origin xyz="0.0125 0 0" rpy="0 -1.570796 0"/>
+        <parent link="tool_link2"/>
+        <child link="tool_tip"/>
+    </joint>
+
 </robot>

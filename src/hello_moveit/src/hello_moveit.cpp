@@ -3,7 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
-//#include <moveit_visual_tools/moveit_visual_tools.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 #include <thread>  // <---- add this to the set of includes at the top
 #include <moveit/planning_scene_interface/planning_scene_interface.hpp>
 #include <tf2/LinearMath/Quaternion.h>
@@ -31,7 +31,12 @@ int main(int argc, char ** argv)
   // Create the MoveIt MoveGroup Interface
   using moveit::planning_interface::MoveGroupInterface;
   auto move_group_interface = MoveGroupInterface(node, "fanuc_arm");
-/*
+
+  move_group_interface.setMaxVelocityScalingFactor(0.05);      // 20 % max hitrosti
+  move_group_interface.setMaxAccelerationScalingFactor(0.05);  // 20 % max pospeška
+
+
+
   // Construct and initialize MoveItVisualTools
   auto moveit_visual_tools = moveit_visual_tools::MoveItVisualTools{
     node, "base_link", rviz_visual_tools::RVIZ_MARKER_TOPIC,
@@ -43,7 +48,7 @@ int main(int argc, char ** argv)
 auto const draw_title = [&moveit_visual_tools](auto text) {
   auto const text_pose = [] {
     auto msg = Eigen::Isometry3d::Identity();
-    msg.translation().z() = 1.0;  // Place text 1m above the base link
+    msg.translation().z() = 1.8;  // Place text 1m above the base link
     return msg;
   }();
   moveit_visual_tools.publishText(text_pose, text, rviz_visual_tools::WHITE,
@@ -57,36 +62,38 @@ auto const draw_trajectory_tool_path =
          "manipulator")](auto const trajectory) {
       moveit_visual_tools.publishTrajectoryLine(trajectory, jmg);
     };
-*/
+
   // Set a target Pose
   std::vector<geometry_msgs::msg::Pose> targets;
 
   geometry_msgs::msg::Pose pose1;
-  pose1.position.x = 0.70;
-  pose1.position.y = -0.40;
-  pose1.position.z = 0.45;
+  pose1.position.x = 1.0;
+  pose1.position.y = 0.0;
+  pose1.position.z = 1.1;
   tf2::Quaternion q1;
-  q1.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
+  q1.setRPY(-0.5, 0.0, 0.0);  // roll, pitch, yaw
   pose1.orientation = tf2::toMsg(q1);
   targets.push_back(pose1);
 
   geometry_msgs::msg::Pose pose2;
-  pose2.position.x = 0.60;
-  pose2.position.y = 0.40;  
-  pose2.position.z = 0.45;
+  pose2.position.x = 1.0;
+  pose2.position.y = 0.0;  
+  pose2.position.z = 1.1;
   tf2::Quaternion q2;
-  q2.setRPY(0.0, 0.4, 0.6);  // roll, pitch, yaw
+  q2.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
   pose2.orientation = tf2::toMsg(q2);
   targets.push_back(pose2);
 
   geometry_msgs::msg::Pose pose3;
-  pose3.position.x = 1.30;
-  pose3.position.y = 0.20;
-  pose3.position.z = 0.70;
+  pose3.position.x = 1.0;
+  pose3.position.y = 0.0;
+  pose3.position.z = 1.1;
   tf2::Quaternion q3;
-  q3.setRPY(0.0, 1.2, 0.0);  // roll, pitch, yaw
+  q3.setRPY(0.5, 0.0, 0.0);  // roll, pitch, yaw
   pose3.orientation = tf2::toMsg(q3);
   targets.push_back(pose3);
+
+  targets.push_back(pose2);
 
 
   // Create collision object for the robot to avoid
@@ -96,11 +103,11 @@ auto const draw_trajectory_tool_path =
     collision_object.id = "box1";
     shape_msgs::msg::SolidPrimitive primitive;
 
-    double box_x = 4.0; //Te spremenljivke ostanejo v temu bloku, če bi hotel da so globalne bi moral definirati izven bloka
+    double box_x = 3.0; //Te spremenljivke ostanejo v temu bloku, če bi hotel da so globalne bi moral definirati izven bloka
     double box_y = 0.3;
     double box_z = 2.5;
 
-    double box_pos_x = 1.1;
+    double box_pos_x = 0.6;
     double box_pos_y = 0.9 + (box_y / 2.0);
     double box_pos_z = box_z / 2.0;
 
@@ -233,6 +240,41 @@ auto const draw_trajectory_tool_path =
   auto const collision_object5 = [frame_id = move_group_interface.getPlanningFrame()] {
     moveit_msgs::msg::CollisionObject collision_object;
     collision_object.header.frame_id = frame_id;
+    collision_object.id = "box5";
+    shape_msgs::msg::SolidPrimitive primitive;
+
+    double box_x = 2.5; //Te spremenljivke ostanejo v temu bloku, če bi hotel da so globalne bi moral definirati izven bloka
+    double box_y = 2.5;
+    double box_z = 0.15;
+
+    double box_pos_x = 0.35;
+    double box_pos_y = -0.05;
+    double box_pos_z = - box_z / 2.0;
+
+    // Define the size of the box in meters
+    primitive.type = primitive.BOX;
+    primitive.dimensions.resize(3);
+    primitive.dimensions[primitive.BOX_X] = box_x;
+    primitive.dimensions[primitive.BOX_Y] = box_y;
+    primitive.dimensions[primitive.BOX_Z] = box_z;
+
+    // Define the pose of the box (relative to the frame_id)
+    geometry_msgs::msg::Pose box_pose;
+    box_pose.orientation.w = 1.0;  // We can leave out the x, y, and z components of the quaternion since they are initialized to 0
+    box_pose.position.x = box_pos_x;
+    box_pose.position.y = box_pos_y;
+    box_pose.position.z = box_pos_z;
+
+    collision_object.primitives.push_back(primitive);
+    collision_object.primitive_poses.push_back(box_pose);
+    collision_object.operation = collision_object.ADD;
+
+    return collision_object;
+  }();
+
+  auto const collision_object6 = [frame_id = move_group_interface.getPlanningFrame()] {
+    moveit_msgs::msg::CollisionObject collision_object;
+    collision_object.header.frame_id = frame_id;
     collision_object.id = "cylinder1";
     shape_msgs::msg::SolidPrimitive primitive;
 
@@ -271,6 +313,7 @@ auto const draw_trajectory_tool_path =
   planning_scene_interface.applyCollisionObject(collision_object3);
   planning_scene_interface.applyCollisionObject(collision_object4);
   planning_scene_interface.applyCollisionObject(collision_object5);
+  planning_scene_interface.applyCollisionObject(collision_object6);
   
   /*
   // Create a plan to that target pose
@@ -279,7 +322,9 @@ auto const draw_trajectory_tool_path =
   moveit_visual_tools.trigger();
   */
 
-  for (const auto & target_pose : targets) {
+  for (size_t i = 0; i < targets.size(); ++i) {
+    const auto & target_pose = targets[i];
+
     move_group_interface.setStartStateToCurrentState();
     move_group_interface.setPoseTarget(target_pose);
 
@@ -291,17 +336,17 @@ auto const draw_trajectory_tool_path =
 
     // Execute the plan
     if(success) {
-      //draw_trajectory_tool_path(plan.trajectory);
-      //moveit_visual_tools.trigger();
-      //prompt("Press 'Next' in the RvizVisualToolsGui window to execute");
-      //draw_title("Executing");
-      //moveit_visual_tools.trigger();
+      draw_trajectory_tool_path(plan.trajectory);
+      moveit_visual_tools.trigger();
+      prompt("Press 'Next' in the RvizVisualToolsGui window to execute");
+      draw_title("Executing");
+      moveit_visual_tools.trigger();
       move_group_interface.execute(plan);
       move_group_interface.clearPoseTargets();
       rclcpp::sleep_for(std::chrono::milliseconds(1000));
     } else {
-      //draw_title("Planning Failed!");
-      //moveit_visual_tools.trigger();
+      draw_title("Planning Failed!");
+      moveit_visual_tools.trigger();
       RCLCPP_ERROR(logger, "Planning failed!");
       break;
     }
