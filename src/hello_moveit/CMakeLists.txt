@@ -11,11 +11,23 @@ find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 
-add_executable(hello_moveit src/hello_moveit.cpp)
+add_executable(hello_moveit 
+src/hello_moveit.cpp
+src/collision_objects.cpp)
+add_executable(hello_moveit_cartesian
+src/hello_moveit_cartesian.cpp
+src/collision_objects.cpp
+)
+add_executable(print_current_pose src/print_current_pose.cpp)
 target_include_directories(hello_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+target_include_directories(hello_moveit_cartesian PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(hello_moveit_cartesian PUBLIC c_std_99 cxx_std_17)
+target_compile_features(print_current_pose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
   hello_moveit
   "moveit_ros_planning_interface"
@@ -23,7 +35,23 @@ ament_target_dependencies(
   "moveit_visual_tools"
 )
 
-install(TARGETS hello_moveit
+ament_target_dependencies(
+  hello_moveit_cartesian
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_visual_tools"
+)
+
+ament_target_dependencies(
+  print_current_pose
+  "moveit_ros_planning_interface"
+  "rclcpp"
+)
+
+install(TARGETS 
+  hello_moveit 
+  hello_moveit_cartesian
+  print_current_pose
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

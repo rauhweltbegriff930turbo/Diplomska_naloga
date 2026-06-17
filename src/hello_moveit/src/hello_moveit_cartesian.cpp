@@ -32,6 +32,8 @@ int main(int argc, char ** argv)
   // Create the MoveIt MoveGroup Interface
   using moveit::planning_interface::MoveGroupInterface;
   auto move_group_interface = MoveGroupInterface(node, "fanuc_arm");
+  move_group_interface.setEndEffectorLink("tool_tip");
+
 
   move_group_interface.setMaxVelocityScalingFactor(0.05);      // 20 % max hitrosti
   move_group_interface.setMaxAccelerationScalingFactor(0.05);  // 20 % max pospeška
@@ -60,35 +62,33 @@ auto const prompt = [&moveit_visual_tools](auto text) {
 };
 /*auto const draw_trajectory_tool_path =
     [&moveit_visual_tools, jmg = move_group_interface.getRobotModel()->getJointModelGroup(
-         "manipulator")](auto const trajectory) {
+         "hand")](auto const trajectory) {
       moveit_visual_tools.publishTrajectoryLine(trajectory, jmg);
     };
 */
+
+auto const current_tcp_pose = move_group_interface.getCurrentPose("tool_tip").pose;
+auto const fixed_position = current_tcp_pose.position;
+
   // Set a target Pose
   std::vector<geometry_msgs::msg::Pose> targets;
 
   geometry_msgs::msg::Pose pose1;
-  pose1.position.x = 1.0;
-  pose1.position.y = 0.0;
-  pose1.position.z = 1.1;
+  pose1.position = fixed_position;
   tf2::Quaternion q1;
   q1.setRPY(-0.5, 0.0, 0.0);  // roll, pitch, yaw
   pose1.orientation = tf2::toMsg(q1);
   targets.push_back(pose1);
 
   geometry_msgs::msg::Pose pose2;
-  pose2.position.x = 1.0;
-  pose2.position.y = 0.0;  
-  pose2.position.z = 1.1;
+  pose2.position = fixed_position;
   tf2::Quaternion q2;
   q2.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
   pose2.orientation = tf2::toMsg(q2);
   targets.push_back(pose2);
 
   geometry_msgs::msg::Pose pose3;
-  pose3.position.x = 1.0;
-  pose3.position.y = 0.0;
-  pose3.position.z = 1.1;
+  pose3.position = fixed_position;
   tf2::Quaternion q3;
   q3.setRPY(0.5, 0.0, 0.0);  // roll, pitch, yaw
   pose3.orientation = tf2::toMsg(q3);
@@ -105,9 +105,11 @@ auto const prompt = [&moveit_visual_tools](auto text) {
 
   planning_scene_interface.applyCollisionObjects(collision_objects);
 
+
   
   // Add the collision object to the scene
   planning_scene_interface.applyCollisionObjects(collision_objects);
+
   
   /*
   // Create a plan to that target pose
@@ -120,13 +122,25 @@ auto const prompt = [&moveit_visual_tools](auto text) {
     const auto & target_pose = targets[i];
 
     move_group_interface.setStartStateToCurrentState();
-    move_group_interface.setPoseTarget(target_pose);
 
-    auto const [success, plan] = [&move_group_interface]{
-      moveit::planning_interface::MoveGroupInterface::Plan msg;
-      auto const ok = static_cast<bool>(move_group_interface.plan(msg));
-      return std::make_pair(ok, msg);
-    }();
+    std::vector<geometry_msgs::msg::Pose> waypoints;
+    waypoints.push_back(target_pose);
+
+    moveit_msgs::msg::RobotTrajectory trajectory;
+
+    double fraction = move_group_interface.computeCartesianPath(
+        waypoints,
+        0.005,   // eef_step
+        trajectory
+    );
+
+  moveit::planning_interface::MoveGroupInterface::Plan plan;
+  plan.trajectory = trajectory;
+
+  bool success = fraction > 0.95;
+
+  RCLCPP_INFO(logger, "Cartesian path fraction: %.2f", fraction);
+
 
     // Execute the plan
     if(success) {
