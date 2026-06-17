@@ -12,4 +12,3 @@ std::vector<moveit_msgs::msg::CollisionObject>
 makeCollisionObjects(const std::string& frame_id);
 
 }  // namespace hello_moveit
-

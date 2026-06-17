@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(hello_moveit 
 src/hello_moveit.cpp
@@ -19,6 +21,7 @@ src/hello_moveit_cartesian.cpp
 src/collision_objects.cpp
 )
 add_executable(print_current_pose src/print_current_pose.cpp)
+add_executable(tool_jog src/tool_jog.cpp)
 target_include_directories(hello_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
@@ -28,6 +31,7 @@ target_include_directories(hello_moveit_cartesian PUBLIC
 target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(hello_moveit_cartesian PUBLIC c_std_99 cxx_std_17)
 target_compile_features(print_current_pose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(tool_jog PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies(
   hello_moveit
   "moveit_ros_planning_interface"
@@ -48,10 +52,19 @@ ament_target_dependencies(
   "rclcpp"
 )
 
+ament_target_dependencies(
+  tool_jog
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "tf2"
+  "tf2_geometry_msgs"
+)
+
 install(TARGETS 
   hello_moveit 
   hello_moveit_cartesian
   print_current_pose
+  tool_jog
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch
