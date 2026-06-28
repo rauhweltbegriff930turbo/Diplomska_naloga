@@ -1,3 +1,4 @@
+#include <fcntl.h>
 #include <sys/select.h>
 #include <termios.h>
 #include <unistd.h>
@@ -24,23 +25,45 @@ class RawTerminal
 public:
   RawTerminal()
   {
-    tcgetattr(STDIN_FILENO, &original_);
+    fd_ = open("/dev/tty", O_RDWR);
+    if (fd_ < 0) {
+      fd_ = STDIN_FILENO;
+    }
+
+    if (tcgetattr(fd_, &original_) != 0) {
+      perror("tcgetattr");
+      return;
+    }
+
+    valid_ = true;
     auto raw = original_;
     raw.c_lflag &= static_cast<unsigned int>(~(ICANON | ECHO));
     raw.c_cc[VMIN] = 1;
     raw.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+    tcsetattr(fd_, TCSANOW, &raw);
   }
 
   ~RawTerminal()
   {
-    tcsetattr(STDIN_FILENO, TCSANOW, &original_);
+    if (valid_) {
+      tcsetattr(fd_, TCSANOW, &original_);
+    }
+    if (fd_ != STDIN_FILENO) {
+      close(fd_);
+    }
+  }
+
+  int fd() const
+  {
+    return fd_;
   }
 
   RawTerminal(const RawTerminal &) = delete;
   RawTerminal & operator=(const RawTerminal &) = delete;
 
 private:
+  int fd_{STDIN_FILENO};
+  bool valid_{false};
   termios original_{};
 };
 
@@ -49,22 +72,22 @@ double degToRad(double degrees)
   return degrees * M_PI / 180.0;
 }
 
-void discardPendingInput()
+void discardPendingInput(int fd)
 {
   timeval timeout{};
   fd_set read_fds;
 
   while (true) {
     FD_ZERO(&read_fds);
-    FD_SET(STDIN_FILENO, &read_fds);
+    FD_SET(fd, &read_fds);
 
-    const int ready = select(STDIN_FILENO + 1, &read_fds, nullptr, nullptr, &timeout);
+    const int ready = select(fd + 1, &read_fds, nullptr, nullptr, &timeout);
     if (ready <= 0) {
       return;
     }
 
     char ignored = 0;
-    if (read(STDIN_FILENO, &ignored, 1) <= 0) {
+    if (read(fd, &ignored, 1) <= 0) {
       return;
     }
   }
@@ -164,8 +187,11 @@ int main(int argc, char ** argv)
 
   bool running = true;
   while (rclcpp::ok() && running) {
-    const char key = static_cast<char>(getchar());
-    discardPendingInput();
+    char key = 0;
+    if (read(terminal.fd(), &key, 1) <= 0) {
+      continue;
+    }
+    discardPendingInput(terminal.fd());
     auto target_pose = move_group.getCurrentPose(kEndEffectorLink).pose;
 
     bool move_requested = true;
@@ -246,7 +272,7 @@ int main(int argc, char ** argv)
       if (planAndExecute(move_group, target_pose, logger)) {
         std::cout << "Done." << std::endl;
       }
-      discardPendingInput();
+      discardPendingInput(terminal.fd());
     }
   }
 

@@ -105,12 +105,6 @@ auto const fixed_position = current_tcp_pose.position;
 
   planning_scene_interface.applyCollisionObjects(collision_objects);
 
-
-  
-  // Add the collision object to the scene
-  planning_scene_interface.applyCollisionObjects(collision_objects);
-
-  
   /*
   // Create a plan to that target pose
   prompt("Press 'Next' in the RvizVisualToolsGui window to plan");

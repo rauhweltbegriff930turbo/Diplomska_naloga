@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
   using moveit::planning_interface::MoveGroupInterface;
   auto move_group_interface = MoveGroupInterface(node, "fanuc_arm");
 
-  move_group_interface.setMaxVelocityScalingFactor(0.05);      // 20 % max hitrosti
-  move_group_interface.setMaxAccelerationScalingFactor(0.05);  // 20 % max pospeška
+  move_group_interface.setMaxVelocityScalingFactor(0.1);      //  max hitrosti
+  move_group_interface.setMaxAccelerationScalingFactor(0.1);  //  max pospeška
 
 
 
@@ -65,36 +65,34 @@ auto const prompt = [&moveit_visual_tools](auto text) {
     };
 */
   // Set a target Pose
-  std::vector<geometry_msgs::msg::Pose> targets;
+  struct Target {
+    geometry_msgs::msg::Pose pose;
+    double velocity_scaling;
+    double acceleration_scaling;
+  };
+
+  std::vector<Target> targets;
+
 
   geometry_msgs::msg::Pose pose1;
-  pose1.position.x = 1.0;
-  pose1.position.y = 0.0;
-  pose1.position.z = 1.1;
+  pose1.position.x = 0.927445;
+  pose1.position.y = -0.022671;
+  pose1.position.z = 0.9;
   tf2::Quaternion q1;
-  q1.setRPY(-0.5, 0.0, 0.0);  // roll, pitch, yaw
+  q1.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
   pose1.orientation = tf2::toMsg(q1);
-  targets.push_back(pose1);
+  targets.push_back({pose1, 0.2, 0.1});
 
   geometry_msgs::msg::Pose pose2;
-  pose2.position.x = 1.0;
-  pose2.position.y = 0.0;  
-  pose2.position.z = 1.1;
+  pose2.position.x = 0.927445;
+  pose2.position.y = -0.022671;  
+  pose2.position.z = 1.3;
   tf2::Quaternion q2;
   q2.setRPY(0.0, 0.0, 0.0);  // roll, pitch, yaw
   pose2.orientation = tf2::toMsg(q2);
-  targets.push_back(pose2);
+  targets.push_back({pose2, 0.2, 0.1});
 
-  geometry_msgs::msg::Pose pose3;
-  pose3.position.x = 1.0;
-  pose3.position.y = 0.0;
-  pose3.position.z = 1.1;
-  tf2::Quaternion q3;
-  q3.setRPY(0.5, 0.0, 0.0);  // roll, pitch, yaw
-  pose3.orientation = tf2::toMsg(q3);
-  targets.push_back(pose3);
-
-  targets.push_back(pose2);
+  targets.push_back({pose1, 0.2, 0.1});
 
 
   // Create collision object for the robot to avoid
@@ -103,10 +101,6 @@ auto const prompt = [&moveit_visual_tools](auto text) {
   auto collision_objects =
       hello_moveit::makeCollisionObjects(move_group_interface.getPlanningFrame());
 
-  planning_scene_interface.applyCollisionObjects(collision_objects);
-
-  
-  // Add the collision object to the scene
   planning_scene_interface.applyCollisionObjects(collision_objects);
   
   /*
@@ -117,10 +111,13 @@ auto const prompt = [&moveit_visual_tools](auto text) {
   */
 
   for (size_t i = 0; i < targets.size(); ++i) {
-    const auto & target_pose = targets[i];
+    const auto & target = targets[i];
+
+    move_group_interface.setMaxVelocityScalingFactor(target.velocity_scaling);
+    move_group_interface.setMaxAccelerationScalingFactor(target.acceleration_scaling);
 
     move_group_interface.setStartStateToCurrentState();
-    move_group_interface.setPoseTarget(target_pose);
+    move_group_interface.setPoseTarget(target.pose);
 
     auto const [success, plan] = [&move_group_interface]{
       moveit::planning_interface::MoveGroupInterface::Plan msg;
