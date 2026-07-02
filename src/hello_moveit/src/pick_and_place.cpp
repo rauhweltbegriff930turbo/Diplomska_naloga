@@ -1,6 +1,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
@@ -40,7 +41,6 @@ int main(int argc, char ** argv)
   move_group_interface.setMaxAccelerationScalingFactor(0.1);  //  max pospeška
 
 
-
   // Construct and initialize MoveItVisualTools
   auto moveit_visual_tools = moveit_visual_tools::MoveItVisualTools{
     node, "base_link", rviz_visual_tools::RVIZ_MARKER_TOPIC,
@@ -72,6 +72,8 @@ auto const prompt = [&moveit_visual_tools](auto text) {
     geometry_msgs::msg::Pose pose;
     double velocity_scaling;
     double acceleration_scaling;
+    double delay_seconds;
+    double vacuum_action;
   };
 
   std::vector<Target> targets;
@@ -79,9 +81,9 @@ auto const prompt = [&moveit_visual_tools](auto text) {
   std::vector<double> target_values;
   node->get_parameter("targets", target_values);
 
-  constexpr size_t kTargetFieldCount = 8;
+  constexpr size_t kTargetFieldCount = 10;
   if (target_values.empty() || target_values.size() % kTargetFieldCount != 0) {
-    RCLCPP_ERROR(logger, "Parameter 'targets' mora imeti skupine po 8 vrednosti.");
+    RCLCPP_ERROR(logger, "Parameter 'targets' mora imeti skupine po 10 vrednosti.");
     rclcpp::shutdown();
     spinner.join();
     return 1;
@@ -100,8 +102,11 @@ auto const prompt = [&moveit_visual_tools](auto text) {
 
     double velocity_scaling = target_values[i + 6];
     double acceleration_scaling = target_values[i + 7];
+    double delay_seconds = target_values[i + 8];
+    double vacuum_action = target_values[i + 9];
 
-    targets.push_back({pose, velocity_scaling, acceleration_scaling});
+
+    targets.push_back({pose, velocity_scaling, acceleration_scaling, delay_seconds, vacuum_action});
   }
 
   for (size_t i = 0; i < targets.size(); ++i) {
@@ -117,10 +122,10 @@ auto const prompt = [&moveit_visual_tools](auto text) {
       rviz_visual_tools::RED,
       rviz_visual_tools::LARGE
     );
-
+/*
     Eigen::Isometry3d text_pose = point_pose;
     text_pose.translation().z() += 0.08;
-/*
+
     moveit_visual_tools.publishText(
       text_pose,
       std::string("T") + std::to_string(i + 1),
@@ -171,7 +176,20 @@ auto const prompt = [&moveit_visual_tools](auto text) {
       moveit_visual_tools.trigger();
       move_group_interface.execute(plan);
       move_group_interface.clearPoseTargets();
-      rclcpp::sleep_for(std::chrono::milliseconds(1000));
+      if (target.vacuum_action == 1.0) {
+        RCLCPP_INFO(logger, "Vklop vakuuma"); // vklopi vakuum
+      }
+      else if (target.vacuum_action == 2.0) {
+        RCLCPP_INFO(logger, "Izklop vakuuma"); // izklopi vakuum
+      }
+      if (target.delay_seconds > 0.0) {
+        rclcpp::sleep_for(
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::duration<double>(target.delay_seconds)
+          )
+        );
+      }
+
     } else {
       draw_title("Planning Failed!");
       moveit_visual_tools.trigger();

@@ -18,8 +18,10 @@ src/hello_moveit.cpp
 src/collision_objects.cpp)
 add_executable(hello_moveit_cartesian
 src/hello_moveit_cartesian.cpp
-src/collision_objects.cpp
-)
+src/collision_objects.cpp)
+add_executable(pick_and_place
+src/pick_and_place.cpp
+src/collision_objects.cpp)
 add_executable(print_current_pose src/print_current_pose.cpp)
 add_executable(tool_jog src/tool_jog.cpp)
 target_include_directories(hello_moveit PUBLIC
@@ -28,10 +30,14 @@ target_include_directories(hello_moveit PUBLIC
 target_include_directories(hello_moveit_cartesian PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
+target_include_directories(pick_and_place PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>)
 target_compile_features(hello_moveit PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(hello_moveit_cartesian PUBLIC c_std_99 cxx_std_17)
 target_compile_features(print_current_pose PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 target_compile_features(tool_jog PUBLIC c_std_99 cxx_std_17)
+target_compile_features(pick_and_place PUBLIC c_std_99 cxx_std_17)
 ament_target_dependencies(
   hello_moveit
   "moveit_ros_planning_interface"
@@ -60,14 +66,22 @@ ament_target_dependencies(
   "tf2_geometry_msgs"
 )
 
+ament_target_dependencies(
+  pick_and_place
+  "moveit_ros_planning_interface"
+  "rclcpp"
+  "moveit_visual_tools"
+)
+
 install(TARGETS 
   hello_moveit 
   hello_moveit_cartesian
   print_current_pose
   tool_jog
+  pick_and_place
   DESTINATION lib/${PROJECT_NAME})
 
-install(DIRECTORY launch
+install(DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

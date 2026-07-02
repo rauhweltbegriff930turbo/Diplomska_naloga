@@ -27,7 +27,7 @@ def generate_launch_description():
             ),
             Node(
                 package="hello_moveit",
-                executable="hello_moveit",
+                executable="pick_and_place",
                 output="screen",
                 parameters=[moveit_config.to_dict(),
                             targets_file,
