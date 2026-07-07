@@ -45,7 +45,7 @@ SPDX-License-Identifier: Apache-2.0
     <!-- links -->
     <link name="${prefix}base_link">
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 9.5" rpy="0 0 0" />
         <geometry>
           <mesh
             filename="package://fanuc_m20ia_description/meshes/m20ia/visual/base_link.stl"
@@ -342,7 +342,7 @@ SPDX-License-Identifier: Apache-2.0
     <!-- world coords -->
     <link name="${prefix}wbase" />
     <joint name="${prefix}base_link-wbase" type="fixed">
-      <origin xyz=" 0  0  .425" rpy="0 0 0" />
+      <origin xyz=" 0  0  9.425" rpy="0 0 0" />
       <parent link="${prefix}base_link" />
       <child link="${prefix}wbase" />
     </joint>

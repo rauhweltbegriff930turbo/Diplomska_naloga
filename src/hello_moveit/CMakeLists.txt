@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(fanuc_msgs REQUIRED)
 
 add_executable(hello_moveit 
 src/hello_moveit.cpp
@@ -71,6 +72,7 @@ ament_target_dependencies(
   "moveit_ros_planning_interface"
   "rclcpp"
   "moveit_visual_tools"
+  "fanuc_msgs"
 )
 
 install(TARGETS 

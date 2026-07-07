@@ -12,6 +12,17 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "hello_moveit/collision_objects.hpp"
 
+#include <future>
+#include <fanuc_msgs/msg/io_type.hpp>
+#include <fanuc_msgs/srv/set_bool_io.hpp>
+
+static const rclcpp::Logger LOGGER =
+rclcpp::get_logger("moveit_task_constructor_demo");
+
+namespace color {
+constexpr const char* RESET = "\033[0m";
+constexpr const char* GREEN = "\033[1;32m";
+}
 
 int main(int argc, char ** argv)
 {
@@ -29,6 +40,39 @@ int main(int argc, char ** argv)
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(node);
   auto spinner = std::thread([&executor]() { executor.spin(); });
+
+  auto vacuum_client =
+    node->create_client<fanuc_msgs::srv::SetBoolIO>(
+      "/fanuc_gpio_controller/set_bool_io"
+    );
+
+  auto set_vacuum = [&vacuum_client, &logger](bool enabled) {
+    if (!vacuum_client->wait_for_service(std::chrono::seconds(2))) {
+      RCLCPP_ERROR(logger, "Service /fanuc_gpio_controller/set_bool_io ni dosegljiv");
+      return false;
+    }
+
+    auto request = std::make_shared<fanuc_msgs::srv::SetBoolIO::Request>();
+    request->io_type.type = fanuc_msgs::msg::IOType::RO;
+    request->index = 1;
+    request->value = enabled;
+
+    auto future = vacuum_client->async_send_request(request);
+
+    if (future.wait_for(std::chrono::seconds(3)) != std::future_status::ready) {
+      RCLCPP_ERROR(logger, "Timeout pri nastavljanju vakuuma");
+      return false;
+    }
+
+    const auto response = future.get();
+    if (response->result != 0) {
+      RCLCPP_ERROR(logger, "Nastavljanje vakuuma ni uspelo, result: %d",
+      response->result);
+      return false;
+    }
+
+    return true;
+  };
 
   // Next step goes here
   // Create the MoveIt MoveGroup Interface
@@ -61,12 +105,12 @@ auto const draw_title = [&moveit_visual_tools](auto text) {
 auto const prompt = [&moveit_visual_tools](auto text) {
   moveit_visual_tools.prompt(text);
 };
-/*auto const draw_trajectory_tool_path =
+auto const draw_trajectory_tool_path =
     [&moveit_visual_tools, jmg = move_group_interface.getRobotModel()->getJointModelGroup(
-         "manipulator")](auto const trajectory) {
+         "fanuc_arm")](auto const trajectory) {
       moveit_visual_tools.publishTrajectoryLine(trajectory, jmg);
     };
-*/
+
   // Set a target Pose
   struct Target {
     geometry_msgs::msg::Pose pose;
@@ -143,14 +187,18 @@ auto const prompt = [&moveit_visual_tools](auto text) {
   auto collision_objects =
       hello_moveit::makeCollisionObjects(move_group_interface.getPlanningFrame());
 
-  planning_scene_interface.applyCollisionObjects(collision_objects);
+  auto collision_object_colors = hello_moveit::makeCollisionObjectColors();
+
+  planning_scene_interface.applyCollisionObjects(
+    collision_objects,
+    collision_object_colors
+  );
   
-  /*
   // Create a plan to that target pose
   prompt("Press 'Next' in the RvizVisualToolsGui window to plan");
   draw_title("Planning");
   moveit_visual_tools.trigger();
-  */
+  
 
   for (size_t i = 0; i < targets.size(); ++i) {
     const auto & target = targets[i];
@@ -169,7 +217,7 @@ auto const prompt = [&moveit_visual_tools](auto text) {
 
     // Execute the plan
     if(success) {
-      //draw_trajectory_tool_path(plan.trajectory);
+      draw_trajectory_tool_path(plan.trajectory);
       moveit_visual_tools.trigger();
       prompt("Press 'Next' in the RvizVisualToolsGui window to execute");
       draw_title("Executing");
@@ -177,10 +225,14 @@ auto const prompt = [&moveit_visual_tools](auto text) {
       move_group_interface.execute(plan);
       move_group_interface.clearPoseTargets();
       if (target.vacuum_action == 1.0) {
-        RCLCPP_INFO(logger, "Vklop vakuuma"); // vklopi vakuum
+        if (set_vacuum(false)) {
+          RCLCPP_INFO(logger, "%sVklop vakuuma%s", color::GREEN, color::RESET);
+        }
       }
       else if (target.vacuum_action == 2.0) {
-        RCLCPP_INFO(logger, "Izklop vakuuma"); // izklopi vakuum
+        if (set_vacuum(true)) {
+          RCLCPP_INFO(logger, "%sIzklop vakuuma%s", color::GREEN, color::RESET);
+        }
       }
       if (target.delay_seconds > 0.0) {
         rclcpp::sleep_for(
