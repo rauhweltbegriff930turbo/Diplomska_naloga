@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <cmath>
+#include <limits>
 
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
@@ -22,6 +24,27 @@ rclcpp::get_logger("moveit_task_constructor_demo");
 namespace color {
 constexpr const char* RESET = "\033[0m";
 constexpr const char* GREEN = "\033[1;32m";
+}
+
+double trajectoryLength(
+  const moveit_msgs::msg::RobotTrajectory & trajectory)
+{
+  double length = 0.0;
+
+  const auto & points = trajectory.joint_trajectory.points;
+  for (size_t i = 1; i < points.size(); ++i) {
+    double segment = 0.0;
+
+    for (size_t j = 0; j < points[i].positions.size(); ++j) {
+      const double diff =
+        points[i].positions[j] - points[i - 1].positions[j];
+      segment += diff * diff;
+    }
+
+    length += std::sqrt(segment);
+  }
+
+  return length;
 }
 
 int main(int argc, char ** argv)
@@ -78,8 +101,23 @@ int main(int argc, char ** argv)
   // Create the MoveIt MoveGroup Interface
   using moveit::planning_interface::MoveGroupInterface;
   auto move_group_interface = MoveGroupInterface(node, "fanuc_arm");
+
+  move_group_interface.setPoseReferenceFrame("base_link");
   move_group_interface.setEndEffectorLink("tool_tip");
 
+  RCLCPP_INFO(
+    logger,
+    "Planning frame: %s",
+    move_group_interface.getPlanningFrame().c_str());
+
+  RCLCPP_INFO(
+    logger,
+    "Pose reference frame: %s",
+    move_group_interface.getPoseReferenceFrame().c_str());
+
+
+  move_group_interface.setPlanningTime(5.0);        // sekunde
+  move_group_interface.setNumPlanningAttempts(1);   // st. poskusov
 
   move_group_interface.setMaxVelocityScalingFactor(0.1);      //  max hitrosti
   move_group_interface.setMaxAccelerationScalingFactor(0.1);  //  max pospeška
@@ -96,7 +134,7 @@ int main(int argc, char ** argv)
 auto const draw_title = [&moveit_visual_tools](auto text) {
   auto const text_pose = [] {
     auto msg = Eigen::Isometry3d::Identity();
-    msg.translation().z() = 1.8;  // Place text 1m above the base link
+    msg.translation().z() = 2.0;  // Place text 1m above the base link
     return msg;
   }();
   moveit_visual_tools.publishText(text_pose, text, rviz_visual_tools::WHITE,
@@ -185,7 +223,7 @@ auto const draw_trajectory_tool_path =
   moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
   auto collision_objects =
-      hello_moveit::makeCollisionObjects(move_group_interface.getPlanningFrame());
+      hello_moveit::makeCollisionObjects("base_link");
 
   auto collision_object_colors = hello_moveit::makeCollisionObjectColors();
 
@@ -209,10 +247,43 @@ auto const draw_trajectory_tool_path =
     move_group_interface.setStartStateToCurrentState();
     move_group_interface.setPoseTarget(target.pose);
 
-    auto const [success, plan] = [&move_group_interface]{
-      moveit::planning_interface::MoveGroupInterface::Plan msg;
-      auto const ok = static_cast<bool>(move_group_interface.plan(msg));
-      return std::make_pair(ok, msg);
+    auto const [success, plan] = [&move_group_interface, &target, &logger]{
+      bool success = false;
+      moveit::planning_interface::MoveGroupInterface::Plan best_plan;
+      double best_length = std::numeric_limits<double>::infinity();
+
+      constexpr int kPlanningTries = 5;
+
+      for (int attempt = 1; attempt <= kPlanningTries; ++attempt) {
+        move_group_interface.clearPoseTargets();
+        move_group_interface.setStartStateToCurrentState();
+        move_group_interface.setPoseTarget(target.pose);
+
+        moveit::planning_interface::MoveGroupInterface::Plan plan;
+        const bool ok = static_cast<bool>(move_group_interface.plan(plan));
+
+        if (!ok) {
+          RCLCPP_WARN(logger, "Plan attempt %d failed", attempt);
+          continue;
+        }
+
+        const double length = trajectoryLength(plan.trajectory);
+
+        RCLCPP_INFO(
+          logger,
+          "Plan attempt %d length: %.3f",
+          attempt,
+          length
+        );
+
+        if (length < best_length) {
+          best_length = length;
+          best_plan = plan;
+          success = true;
+        }
+      }
+
+      return std::make_pair(success, best_plan);
     }();
 
     // Execute the plan
@@ -222,8 +293,14 @@ auto const draw_trajectory_tool_path =
       prompt("Press 'Next' in the RvizVisualToolsGui window to execute");
       draw_title("Executing");
       moveit_visual_tools.trigger();
-      move_group_interface.execute(plan);
+      const bool executed = static_cast<bool>(move_group_interface.execute(plan));
       move_group_interface.clearPoseTargets();
+
+      if (!executed) {
+        RCLCPP_ERROR(logger, "Execution failed!");
+        break;
+      }
+
       if (target.vacuum_action == 1.0) {
         if (set_vacuum(false)) {
           RCLCPP_INFO(logger, "%sVklop vakuuma%s", color::GREEN, color::RESET);
@@ -243,7 +320,7 @@ auto const draw_trajectory_tool_path =
       }
 
     } else {
-      draw_title("Planning Failed!");
+      draw_title("Planning failed!");
       moveit_visual_tools.trigger();
       RCLCPP_ERROR(logger, "Planning failed!");
       break;

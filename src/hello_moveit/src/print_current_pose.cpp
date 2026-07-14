@@ -1,5 +1,6 @@
 #include <memory>
 #include <thread>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 #include <moveit/move_group_interface/move_group_interface.hpp>
@@ -19,9 +20,35 @@ int main(int argc, char ** argv)
     moveit::planning_interface::MoveGroupInterface move_group_interface(node, "fanuc_arm");
     move_group_interface.setEndEffectorLink("tool_tip");
 
+    RCLCPP_INFO(
+        node->get_logger(),
+        "Planning frame: %s",
+        move_group_interface.getPlanningFrame().c_str());
+
+    RCLCPP_INFO(
+        node->get_logger(),
+        "Pose reference frame: %s",
+        move_group_interface.getPoseReferenceFrame().c_str());
+
+    RCLCPP_INFO(
+        node->get_logger(),
+        "End effector link: %s",
+        move_group_interface.getEndEffectorLink().c_str());
+
+    auto const joint_names = move_group_interface.getJointNames();
+    auto const joint_values = move_group_interface.getCurrentJointValues();
+
+    for (size_t i = 0; i < joint_names.size() && i < joint_values.size(); ++i) {
+        RCLCPP_INFO(
+            node->get_logger(),
+            "Joint %s: %.6f",
+            joint_names[i].c_str(),
+            joint_values[i]);
+    }
+
     auto const pose = move_group_interface.getCurrentPose("tool_tip");
 
-    RCLCPP_INFO(node->get_logger(), "Frame: %s", pose.header.frame_id.c_str());
+    RCLCPP_INFO(node->get_logger(), "Pose frame: %s", pose.header.frame_id.c_str());
 
     RCLCPP_INFO(
         node->get_logger(),

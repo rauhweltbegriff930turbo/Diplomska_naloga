@@ -11,13 +11,6 @@
 
     <xacro:fanuc_m20ia_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
 
-    <link name="world"/>
-    <joint name="world_to_base_link" type="fixed">
-      <parent link="world"/>
-      <child link="base_link"/>
-      <origin xyz="0 0 0.095" rpy="0 0 0"/>
-    </joint>
-
     <link name="tool_link">
       <visual>
         <origin xyz="0 0 0" rpy="0 1.570796 0" />

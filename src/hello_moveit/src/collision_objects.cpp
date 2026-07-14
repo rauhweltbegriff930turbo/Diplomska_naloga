@@ -100,7 +100,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = 0.97;
     double box_pos_y = 0.275;
-    double box_pos_z = 0.85;
+    double box_pos_z = 0.75 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -116,7 +116,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = 0.5;
     double box_pos_y = 0.9 + (box_y / 2.0);
-    double box_pos_z = box_z / 2.0;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -132,7 +132,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = -0.3 - (box_x / 2.0);
     double box_pos_y = 0.4 + (box_y / 2.0);
-    double box_pos_z = box_z / 2.0;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -148,7 +148,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = -0.45 - (box_x / 2.0);
     double box_pos_y = -0.2;
-    double box_pos_z = box_z / 2.0;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -164,7 +164,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = 0.5;
     double box_pos_y = -0.05;
-    double box_pos_z = 2.25 + (box_z / 2.0);
+    double box_pos_z = 2.25 + (box_z / 2.0) - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -180,7 +180,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = 0.5;
     double box_pos_y = -0.05;
-    double box_pos_z = -box_z / 2.0;
+    double box_pos_z = -box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -196,7 +196,7 @@ makeCollisionObjects(const std::string& frame_id)
 
     double box_pos_x = -0.45 + box_x/2.0;
     double box_pos_y = -0.7 - box_y/2.0;
-    double box_pos_z = box_z / 2.0;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -206,13 +206,13 @@ makeCollisionObjects(const std::string& frame_id)
   }
 
   {
-    double box_x = 0.4;   //robotov krmilnik
-    double box_y = 0.9;
-    double box_z = 0.6;
+    double box_x = 0.4;   //miza
+    double box_y = 1.0;
+    double box_z = 0.65;
 
     double box_pos_x = 0.89;
-    double box_pos_y = 0.0;
-    double box_pos_z = box_z / 2.0;
+    double box_pos_y = - 0.1;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -222,13 +222,13 @@ makeCollisionObjects(const std::string& frame_id)
   }
 
   {
-    double box_x = 0.8;   //robotov krmilnik
-    double box_y = 0.8;
+    double box_x = 0.8;   //podloga robota
+    double box_y = 0.9;
     double box_z = 0.0948;
 
     double box_pos_x = 0.0;
     double box_pos_y = 0.0;
-    double box_pos_z = box_z / 2.0;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -236,14 +236,30 @@ makeCollisionObjects(const std::string& frame_id)
         box_x, box_y, box_z,
         box_pos_x, box_pos_y, box_pos_z));
   }
+  
+  {
+    double box_x = 0.29;   //podloga robota
+    double box_y = 0.32;
+    double box_z = 0.87;
+
+    double box_pos_x = 0.8;
+    double box_pos_y = 0.65;
+    double box_pos_z = box_z / 2.0 - 0.095;
+
+    objects.push_back(makeBox(
+        frame_id,
+        "box9",
+        box_x, box_y, box_z,
+        box_pos_x, box_pos_y, box_pos_z));
+  }
 
   {
-    double cylinder_height = 0.665;   //miza
+    double cylinder_height = 0.665 + 0.07;   //miza
     double cylinder_radius = 0.275;
 
     double cylinder_pos_x = 0.89;
     double cylinder_pos_y = 0.0;
-    double cylinder_pos_z = cylinder_height / 2.0;
+    double cylinder_pos_z = cylinder_height / 2.0 - 0.095;
 
     objects.push_back(makeCylinder(
         frame_id,
@@ -270,8 +286,9 @@ makeCollisionObjectColors()
   colors.push_back(makeColor("box4", 0.0f, 1.0f, 0.0f, 0.6f));      // zelena
   colors.push_back(makeColor("box5", 0.0f, 1.0f, 0.0f, 0.6f));      // zelena
   colors.push_back(makeColor("box6", 0.0f, 1.0f, 0.0f, 0.6f));      // zelena
-  colors.push_back(makeColor("box7", 1.0f, 1.0f, 0.0f, 1.0f));      // zelena
-  colors.push_back(makeColor("box8", 0.0f, 0.0f, 0.0f, 1.0f));      // zelena
+  colors.push_back(makeColor("box7", 1.0f, 1.0f, 0.0f, 1.0f));      // rumena
+  colors.push_back(makeColor("box8", 0.0f, 0.0f, 0.0f, 1.0f));      // črna
+  colors.push_back(makeColor("box9", 1.0f, 1.0f, 0.0f, 1.0f));      // rumena
   colors.push_back(makeColor("cylinder1", 1.0f, 1.0f, 0.0f, 1.0f)); // rumena
 
   return colors;
