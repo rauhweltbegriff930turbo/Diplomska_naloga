@@ -137,7 +137,7 @@ Visualization Manager:
         Robot Alpha: 0.5
         Robot Color: 150; 50; 150
         Show Robot Collision: false
-        Show Robot Visual: true
+        Show Robot Visual: false
         Show Trail: false
         State Display Time: 0.05 s
         Trail Step Size: 1
@@ -290,10 +290,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.20000043511390686
+      Pitch: 0.1850004494190216
       Target Frame: base_link
       Value: Orbit (rviz_default_plugins)
-      Yaw: 5.415179252624512
+      Yaw: 5.445179462432861
     Saved: ~
 Window Geometry:
   Displays:

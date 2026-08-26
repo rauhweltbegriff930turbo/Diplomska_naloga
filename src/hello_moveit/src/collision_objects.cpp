@@ -94,13 +94,13 @@ makeCollisionObjects(const std::string& frame_id)
   std::vector<moveit_msgs::msg::CollisionObject> objects;
 
   {
-    double box_x = 0.3;   //ovira
+    double box_x = 0.65;   //ovira
     double box_y = 0.1;
-    double box_z = 0.45;
+    double box_z = 1.03;
 
     double box_pos_x = 0.97;
-    double box_pos_y = 0.275;
-    double box_pos_z = 0.75 - 0.095;
+    double box_pos_y = 0.33;
+    double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
         frame_id,
@@ -243,7 +243,7 @@ makeCollisionObjects(const std::string& frame_id)
     double box_z = 0.87;
 
     double box_pos_x = 0.8;
-    double box_pos_y = 0.65;
+    double box_pos_y = 0.6;
     double box_pos_z = box_z / 2.0 - 0.095;
 
     objects.push_back(makeBox(
