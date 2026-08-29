@@ -13,6 +13,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include "hello_moveit/collision_objects.hpp"
+#include <moveit/robot_state/robot_state.hpp>
 
 #include <future>
 #include <fanuc_msgs/msg/io_type.hpp>
@@ -27,21 +28,42 @@ constexpr const char* GREEN = "\033[1;32m";
 }
 
 double trajectoryLength(
-  const moveit_msgs::msg::RobotTrajectory & trajectory)
+  const moveit_msgs::msg::RobotTrajectory & trajectory,
+  const moveit::core::RobotModelConstPtr & robot_model,
+  const std::string & link_name)
 {
+  const auto & joint_trajectory = trajectory.joint_trajectory;
+  const auto & points = joint_trajectory.points;
+
+  if (!robot_model || points.size() < 2) {
+    return 0.0;
+  }
+
+  const auto * link_model = robot_model->getLinkModel(link_name);
+  if (!link_model) {
+    return std::numeric_limits<double>::infinity();
+  }
+
   double length = 0.0;
+  bool have_previous = false;
+  Eigen::Vector3d previous_position = Eigen::Vector3d::Zero();
 
-  const auto & points = trajectory.joint_trajectory.points;
-  for (size_t i = 1; i < points.size(); ++i) {
-    double segment = 0.0;
+  moveit::core::RobotState state(robot_model);
+  state.setToDefaultValues();
 
-    for (size_t j = 0; j < points[i].positions.size(); ++j) {
-      const double diff =
-        points[i].positions[j] - points[i - 1].positions[j];
-      segment += diff * diff;
+  for (const auto & point : points) {
+    state.setVariablePositions(joint_trajectory.joint_names, point.positions);
+    state.update();
+
+    const Eigen::Vector3d current_position =
+      state.getGlobalLinkTransform(link_model).translation();
+
+    if (have_previous) {
+      length += (current_position - previous_position).norm();
     }
 
-    length += std::sqrt(segment);
+    previous_position = current_position;
+    have_previous = true;
   }
 
   return length;
@@ -267,11 +289,15 @@ auto const draw_trajectory_tool_path =
           continue;
         }
 
-        const double length = trajectoryLength(plan.trajectory);
+        const double length = trajectoryLength(
+          plan.trajectory,
+          move_group_interface.getRobotModel(),
+          move_group_interface.getEndEffectorLink()
+        );
 
         RCLCPP_INFO(
           logger,
-          "Plan attempt %d length: %.3f",
+          "Plan attempt %d TCP length: %.3fm",
           attempt,
           length
         );
